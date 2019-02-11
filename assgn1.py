@@ -79,14 +79,24 @@ def activations(layersizelist):
 	return funclist
 
 
-def forwardpass(weights, layers, func, data):
+def forwardpass(weights, layers, func, dkn):
 	for i in range(len(weights) - 1):
-		layers[i+1][1:] = list(map(func[i], np.matmul(weights[i],layers[i])))
+		print('weight dim',[len(weights[i]),len(weights[i][0])])
+		print('layer dim',[len(layers[i]),len(layers[i][0])])
+		boomba = np.dot(weights[i],layers[i])
+		print(len(boomba),len(boomba[0]))
+		print(boomba)
+		#print(list(map(func[i], np.matmul(weights[i],layers[i]))))
+		#layers[i+1][1:] = list(map(func[i], np.matmul(weights[i],layers[i])))
+	return dkn[0] - layers[-1][0]
 
-
-
-weights = [[[1,0],[0,1]],[1,1,1]]
 training_data = normalization(datafile)
+y_vec = normalization(datafile,1)
+#print(y_vec)
+
+
+weights = weights_init([2,3,1])
 layers = layer_init([2,3,1])
 funclist = activations([2,3,1])
-print(funclist)
+forwardpasstest = forwardpass(weights, layers, funclist, y_vec)
+print(forwardpass)
