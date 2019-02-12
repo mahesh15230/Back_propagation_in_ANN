@@ -1,17 +1,45 @@
 import numpy as np
 import math
 
-
-
-
-# 1. Test correctness of normalization function with falula by normalizing and denormalizing
-# 2. Test the layer_init function
 # 3. Rewrite forwardpass function if required
+# 4. Make activations function more flexible
 
 
 
-datafile = 'falula.txt'
-data = np.transpose(np.loadtxt(datafile))
+def data_init(datafile, test = None, train = None, valid = None, full = None):
+	data = np.loadtxt(datafile)
+	print('old data', data)
+	if full != None:
+		return data
+	print('testing index', round(len(data) * .1))
+	testing_data = data[round(len(data) * .1):]
+	#print('testing_data', testing_data)
+	print('testing data size', len(testing_data))
+	print('index', len(data) - round(len(data) * .1))
+	data = data[:len(data) - round(len(data) * .1)]
+	print('new data', data)
+	print('train index', len(data) - (round(len(data) * .8)))
+	training_data = data[:len(data) - (round(len(data) * .8))]
+	print('train', training_data)
+	validation_data = data[round(len(data) * .2):]
+	print('valid', validation_data)
+	if test != None:
+		return testing_data
+	elif train != None:
+		return training_data
+	elif valid != None:
+		return validation_data
+	
+datafile = 'dataset_full.txt'
+fulldata = data_init(datafile, full = 1)
+test_data = data_init(datafile, test = 1)
+train_data = data_init(datafile,train = 1)
+valid_data = data_init(datafile, valid = 1)
+
+print('full', len(fulldata))
+print('test', len(test_data))
+print('train',len(train_data))
+print('valid',len(valid_data))
 
 def normalization(datafile,sample_or_label = None):
 
@@ -51,13 +79,32 @@ def weights_init(layersizelist):
 	return weights
 
 
-def layer_init(layersizelist): #Assuming input layer is a normal list
-	layers = []
-	for i in range(len(layersizelist) - 1):
-		layers.append(np.transpose([1] + [None] * (layersizelist[i] - 1)))
-	layers.append([None] * layersizelist[-1])
-	return layers
+# def layer_init(layersizelist, inputlayer, minibatchsize = None): #Assuming input layer is a normal list
+# 	layers = []
+# 	for i in range(len(layersizelist) - 1):
+# 		layers.append(np.transpose([1] + [None] * (layersizelist[i] - 1)))
+# 	layers.append([None] * layersizelist[-1])
+# 	if minibatchsize == None:
+# 		#layers[0][1:] = 
+# 		return layers
+# 	# else:
+# 	# 	for i in range(len(layersizelist)):
+# 	# 		# mini batches.....
 
+# def layers_init(layersizelist, inputlayer, minibatchsize = None):
+# 	if minibatchsize:
+# 		print('mini')
+# 		for i in range(len(layersizelist) - 1):
+# 			layers = np.array([[1] * (layersizelist[i])] * minibatchsize)
+# 		layers.append([[1] * layersizelist[-1]] * minibatchsize)
+# 		layers_ = np.transpose(layers)
+# 		return layers_
+# 	else:
+# 		print('no mini')
+# 		for i in range(len(layersizelist) - 1):
+# 			layers.append(np.transpose([1] * (layersizelist[i])))
+# 	 	layers.append([1] * layersizelist[-1])
+# 		return layers
 
 def relu(x):
 	if x <= 0:
@@ -67,6 +114,18 @@ def relu(x):
 
 def logistic(x):
 	return 1/(1 + math.exp(-x))
+
+def relu_derivative(x):
+	if x <= 0:
+		return 0
+	else:
+		return 1
+
+def logistic_derivative(x):
+	return logistic(x) * (1 - logistic(x))
+
+def tanh_derivative(x):
+	return 1 - math.tanh(x)**2
 
 def activations(layersizelist):
 	funclist = []
@@ -90,13 +149,10 @@ def forwardpass(weights, layers, func, dkn):
 		#layers[i+1][1:] = list(map(func[i], np.matmul(weights[i],layers[i])))
 	return dkn[0] - layers[-1][0]
 
-training_data = normalization(datafile)
-y_vec = normalization(datafile,1)
-#print(y_vec)
-
-
-weights = weights_init([2,3,1])
-layers = layer_init([2,3,1])
-funclist = activations([2,3,1])
-forwardpasstest = forwardpass(weights, layers, funclist, y_vec)
-print(forwardpass)
+# layersizelist = [4,8,4,1]
+# weights = weights_init(layersizelist)
+# layers = layer_init(layersizelist,5)
+# funclist = activations(layersizelist)
+# forwardpasstest = forwardpass(weights, layers, funclist, y_vec)
+# print(forwardpass)
+# print(layers)
