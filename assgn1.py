@@ -8,20 +8,20 @@ import math
 
 def data_init(datafile, test = None, train = None, valid = None, full = None):
 	data = np.loadtxt(datafile)
-	print('old data', data)
+	print('old data size', len(data))
 	if full != None:
 		return data
 	print('testing index', round(len(data) * .1))
-	testing_data = data[round(len(data) * .1):]
+	testing_data = data[:round(len(data) * .1)]
 	#print('testing_data', testing_data)
 	print('testing data size', len(testing_data))
 	print('index', len(data) - round(len(data) * .1))
-	data = data[:len(data) - round(len(data) * .1)]
-	print('new data', data)
+	data = data[957:len(data) - 1]
+	print('new data size', len(data))
 	print('train index', len(data) - (round(len(data) * .8)))
-	training_data = data[:len(data) - (round(len(data) * .8))]
+	validation_data = data[:len(data) - (round(len(data) * .8))]
 	print('train', training_data)
-	validation_data = data[round(len(data) * .2):]
+	training_data = data[round(len(data) * .2):]
 	print('valid', validation_data)
 	if test != None:
 		return testing_data
