@@ -1,32 +1,27 @@
 import numpy as np
 import math
 
-# 3. Rewrite forwardpass function if required
-# 4. Make activations function more flexible
-
-
-
 def data_init(datafile, test = None, train = None, valid = None, full = None):
-    data = np.loadtxt(datafile)
-    if full != None:
-    	return data
-    testing_data = data[:round(len(data) * .1)]
-    #print('testing_data', testing_data)
-    data = data[957:len(data) - 1]
-    validation_data = data[:len(data) - (round(len(data) * .8))]
-    training_data = data[round(len(data) * .2):]
-    if test != None:
-        return testing_data
-    elif train != None:
-        return training_data
-    elif valid != None:
-        return validation_data
+	data = np.loadtxt(datafile)
+	if full != None:
+		return data
+	testing_data = data[:round(len(data) * .1)]
+	data = data[round(len(data) * .1):len(data) - 1]
+	validation_data = data[:len(data) - (round(len(data) * .8))]
+	training_data = data[round(len(data) * .2):]
+	if test != None:
+		print('test')
+		return testing_data
+	elif train != None:
+		print('train')
+		return training_data
+	elif valid != None:
+		print('valid')
+		return validation_data
 
-def normalization(datafile,sample_or_label = None):
+def normalization(training_data,sample_or_label = None):
 
 ## Note : This function can take column vector as input only when it's represented like this a = [[1],[2],[3]] and not like this a = [1,2,3]
-	
-	training_data = np.loadtxt(datafile)
 	data_training = np.transpose(training_data)
 	
 	for row in range(len(data_training)):
@@ -36,17 +31,16 @@ def normalization(datafile,sample_or_label = None):
 			
 		if row != len(data_training) - 1: #Normalization for input neurons : (-1,1)
 			data_training[row][:] = [(2*i - limmax - limmin)/(limmax - limmin) for i in data_training[row]]
-			np.savetxt('normalized falula.txt',np.transpose(data_training))
 		else:       #Normalization for output neurons : (0,1)
 			data_training[row][:] = [(i - limmin)/(limmax - limmin) for i in data_training[row]]
-			np.savetxt('normalized falula.txt',np.transpose(data_training))
 	
-	x = data_training[:len(data_training) - 1]
-	y = data_training[-1]
-	if sample_or_label == None:
-		return np.transpose(x)
-	else:
-		return np.transpose(y)
+	# x = data_training[:len(data_training) - 1]
+	# y = data_training[-1]
+	# if sample_or_label == None:
+	# 	return np.transpose(x)
+	# else:
+	# 	return np.transpose(y)
+	return np.transpose(data_training)
 
 
 def weights_init(layersizelist):
@@ -72,35 +66,29 @@ def weights_init(layersizelist):
 # 	# 	for i in range(len(layersizelist)):
 # 	# 		# mini batches.....
 
-# def layers_init(layersizelist, inputlayer, minibatchsize = None):
-# 	if minibatchsize:
-# 		print('mini')
-# 		for i in range(len(layersizelist) - 1):
-# 			layers = np.array([[1] * (layersizelist[i])] * minibatchsize)
-# 		layers.append([[1] * layersizelist[-1]] * minibatchsize)
-# 		layers_ = np.transpose(layers)
-# 		return layers_
-# 	else:
-# 		print('no mini')
-# 		for i in range(len(layersizelist) - 1):
-# 			layers.append(np.transpose([1] * (layersizelist[i])))
-# 	 	layers.append([1] * layersizelist[-1])
-# 		return layers
+def layers_init(layersizelist, minibatchsize = None):
+	if minibatchsize:
+		print('mini')
+		for i in range(len(layersizelist) - 1):
+			layers = np.array([[1] * (layersizelist[i])] * minibatchsize)
+		layers.append([[1] * layersizelist[-1]] * minibatchsize)
+		layers_ = np.transpose(layers)
+		return layers_
+	else:
+		print('no mini')
+		for i in range(len(layersizelist) - 1):
+			layers.append(np.transpose([1] * (layersizelist[i])))
+		layers.append([1] * layersizelist[-1])
+		return layers
 
 def relu(x):
-	if x <= 0:
-		return 0
-	else:
-		return x
+	return x * (x > 0)
 
 def logistic(x):
 	return 1/(1 + math.exp(-x))
 
 def relu_derivative(x):
-	if x <= 0:
-		return 0
-	else:
-		return 1
+	return (x > 0)
 
 def logistic_derivative(x):
 	return logistic(x) * (1 - logistic(x))
@@ -131,11 +119,10 @@ def forwardpass(weights, layers, func, dkn):
 	return dkn[0] - layers[-1][0]
 
 
-datafile = 'dataset_full.txt'
+datafile = 'falula.txt'
 fulldata = data_init(datafile, full = 1)
-test_data = data_init(datafile, test = 1)
-train_data = data_init(datafile,train = 1)
-valid_data = data_init(datafile, valid = 1)
+print(fulldata)
+normal_Data = normalization(fulldata)
 
 # layersizelist = [4,8,4,1]
 # weights = weights_init(layersizelist)
