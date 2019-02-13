@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import copy as cp
 
 def data_init(datafile, test = None, train = None, valid = None, full = None):
 	data = np.loadtxt(datafile)
@@ -22,7 +23,7 @@ def data_init(datafile, test = None, train = None, valid = None, full = None):
 def normalization(training_data,sample_or_label = None):
 
 ## Note : This function can take column vector as input only when it's represented like this a = [[1],[2],[3]] and not like this a = [1,2,3]
-	data_training = np.transpose(training_data)
+	data_training = np.transpose(cp.deepcopy(training_data))
 	
 	for row in range(len(data_training)):
 
@@ -34,13 +35,13 @@ def normalization(training_data,sample_or_label = None):
 		else:       #Normalization for output neurons : (0,1)
 			data_training[row][:] = [(i - limmin)/(limmax - limmin) for i in data_training[row]]
 	
-	# x = data_training[:len(data_training) - 1]
-	# y = data_training[-1]
-	# if sample_or_label == None:
-	# 	return np.transpose(x)
-	# else:
-	# 	return np.transpose(y)
-	return np.transpose(data_training)
+	x = data_training[:len(data_training) - 1]
+	y = data_training[-1]
+	if sample_or_label == None:
+		return np.transpose(x)
+	else:
+		return np.transpose(y)
+	
 
 
 def weights_init(layersizelist):
@@ -51,7 +52,7 @@ def weights_init(layersizelist):
 		else:
 			weights.append((1/math.sqrt(layersizelist[i]))*np.random.uniform(-1,1,[layersizelist[i+1] - 1, layersizelist[i]])) # layersizelist[i+1] - 1 : minus 1 because weights aren't connected to the bias neuron
 
-	return weights
+	return np.array(weights)
 
 
 # def layer_init(layersizelist, inputlayer, minibatchsize = None): #Assuming input layer is a normal list
@@ -72,14 +73,15 @@ def layers_init(layersizelist, minibatchsize = None):
 		for i in range(len(layersizelist) - 1):
 			layers = np.array([[1] * (layersizelist[i])] * minibatchsize)
 		layers.append([[1] * layersizelist[-1]] * minibatchsize)
-		layers_ = np.transpose(layers)
-		return layers_
+		return np.transpose(layers)
 	else:
 		print('no mini')
 		for i in range(len(layersizelist) - 1):
-			layers.append(np.transpose([1] * (layersizelist[i])))
+			layers.append(cp.deepcopy(np.transpose([1] * (layersizelist[i]))))
 		layers.append([1] * layersizelist[-1])
 		return layers
+
+
 
 def relu(x):
 	return x * (x > 0)
