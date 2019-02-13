@@ -7,39 +7,20 @@ import math
 
 
 def data_init(datafile, test = None, train = None, valid = None, full = None):
-	data = np.loadtxt(datafile)
-	print('old data size', len(data))
-	if full != None:
-		return data
-	print('testing index', round(len(data) * .1))
-	testing_data = data[:round(len(data) * .1)]
-	#print('testing_data', testing_data)
-	print('testing data size', len(testing_data))
-	print('index', len(data) - round(len(data) * .1))
-	data = data[957:len(data) - 1]
-	print('new data size', len(data))
-	print('train index', len(data) - (round(len(data) * .8)))
-	validation_data = data[:len(data) - (round(len(data) * .8))]
-	print('train', training_data)
-	training_data = data[round(len(data) * .2):]
-	print('valid', validation_data)
-	if test != None:
-		return testing_data
-	elif train != None:
-		return training_data
-	elif valid != None:
-		return validation_data
-	
-datafile = 'dataset_full.txt'
-fulldata = data_init(datafile, full = 1)
-test_data = data_init(datafile, test = 1)
-train_data = data_init(datafile,train = 1)
-valid_data = data_init(datafile, valid = 1)
-
-print('full', len(fulldata))
-print('test', len(test_data))
-print('train',len(train_data))
-print('valid',len(valid_data))
+    data = np.loadtxt(datafile)
+    if full != None:
+    	return data
+    testing_data = data[:round(len(data) * .1)]
+    #print('testing_data', testing_data)
+    data = data[957:len(data) - 1]
+    validation_data = data[:len(data) - (round(len(data) * .8))]
+    training_data = data[round(len(data) * .2):]
+    if test != None:
+        return testing_data
+    elif train != None:
+        return training_data
+    elif valid != None:
+        return validation_data
 
 def normalization(datafile,sample_or_label = None):
 
@@ -148,6 +129,13 @@ def forwardpass(weights, layers, func, dkn):
 		#print(list(map(func[i], np.matmul(weights[i],layers[i]))))
 		#layers[i+1][1:] = list(map(func[i], np.matmul(weights[i],layers[i])))
 	return dkn[0] - layers[-1][0]
+
+
+datafile = 'dataset_full.txt'
+fulldata = data_init(datafile, full = 1)
+test_data = data_init(datafile, test = 1)
+train_data = data_init(datafile,train = 1)
+valid_data = data_init(datafile, valid = 1)
 
 # layersizelist = [4,8,4,1]
 # weights = weights_init(layersizelist)
