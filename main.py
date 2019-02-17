@@ -9,7 +9,7 @@ if __name__ == "__main__":
     ann_arch = [4,6,6,6,1]
     layers = layers_init(ann_arch, minibatchsize)
     weights = weights_init(ann_arch)
-    act_func = activations(ann_arch)
+    act_func = [tanh,relu,tanh,logistic]
     for i in range(len(traindata)):
         error = forwardpass(traindata[:,i:i + minibatchsize], layers, weights, act_func, minibatchsize)
         
