@@ -80,89 +80,45 @@ def layers_init(layersizelist, minibatchsize):
 	layer = [np.ones((layersizelist[i],minibatchsize)) for i in range(len(layersizelist))]
 	return np.array(layer)
 
-def relu(x, isnotforward = False):
-	if not isnotforward:
+def relu(x, isbackward = False):
+	if not isbackward:
 		return np.array([[i * int(i > 0) for i in x[j]] for j in range(np.shape(x)[0])])
 	else:
 		return np.array([[int(i > 0) for i in x[j]] for j in range(np.shape(x)[0])])
 
-temp = np.array([[-1,0,1],[-1,0,1],[-1,0,1]])
-print('relu forw',relu(temp,False))
-print('relu back', relu(temp,True))
 
-def logistic(x, isnotforward = False):
-	if not isnotforward:
+def logistic(x, isbackward = False):
+	if not isbackward:
 		return np.array([[1/(1 + math.exp(-i)) for i in x[j]] for j in range(np.shape(x)[0])])
 	else:
 		return logistic(x,False) * (1 - logistic(x,False))
 
-print('logistic forw', logistic(temp,False))
-print('logistic back', logistic(temp,True))
 
-
-
-def tanh(x, isnotforward = False):
-	if not isnotforward:
+def tanh(x, isbackward = False):
+	if not isbackward:
 		return np.tanh(x)
 	else:
-		return np.array([[1 - np.tanh(i)**2 for i in x[j]] for j in range(np.shape(x)[0])])
-
-print('tanh forw', tanh(temp,False))
-print('tanh back', tanh(temp,True))
+		return 1 - tanh(x,False)**2
 
 
-def activations(layersizelist):
-	funclist = []
-	for i in range(len(layersizelist) - 2):
-		if i%2 == 0:
-			funclist.append(np.tanh)
-		else:
-			funclist.append(relu)
-	funclist.append(logistic)
-	return funclist
-
-
-# def forwardpass(weights, layers, func, dkn):
-# 	for i in range(len(weights) - 1):
-# 		print('weight dim',[len(weights[i]),len(weights[i][0])])
-# 		print('layer dim',[len(layers[i]),len(layers[i][0])])
-# 		boomba = np.dot(weights[i],layers[i])
-# 		print(len(boomba),len(boomba[0]))
-# 		print(boomba)
-# 		#print(list(map(func[i], np.matmul(weights[i],layers[i]))))
-# 		#layers[i+1][1:] = list(map(func[i], np.matmul(weights[i],layers[i])))
-# 	return dkn[0] - layers[-1][0]
+act = [tanh,relu,tanh,logistic]
 
 def forwardpass(normal_minibatch, layers, weights, actfunc, minibatchsize):
-	dkn = np.transpose(cp.deepcopy([normal_minibatch[-1] for i in range(minibatchsize)]))
-	print('old dim normal batch', np.shape(normal_minibatch))
-	print('old minibatch', normal_minibatch)
+	dkn = normal_minibatch[-1]
 	normal_minibatch = np.delete(normal_minibatch,np.shape(normal_minibatch)[0]-1,0)
-	print('new dim normal batch', np.shape(normal_minibatch))
-	print('new layer', normal_minibatch)
-	layers[0] = normal_minibatch[:,:minibatchsize]
-	for i in range(len(layers)):
-		print('dim weights',np.shape(weights[i]))
-		print('dim layer', np.shape(layers[i]))
-		print('dim dot', np.shape(weights[i]@layers[i]))
-		layers[i][1:,:] = np.apply_along_axis(actfunc[i],0,np.dot(weights[i],layers[i]))
-		print('layer[index]', layers[i])
-	print('dim layer[-1]', np.shape(layers[-1]))
-	print('dim dkn', np.shape(dkn))
-
-
-	# for i in range(len(normal_data)):
-	# 	layers[i][1:,:] = np.dot(weights[i], normal_data[:,i:i + minibatchsize])
+	layers[0][1:,:] = normal_minibatch[:,:minibatchsize]
+	for i in range(len(layers) - 1):
+		layers[i+1][1:,:] = actfunc[i](weights[i]@layers[i],False)
+	return dkn - layers[-1]
 
 datafile = 'dataset_minibatch_test.txt'
 fulldata = np.transpose(np.array(data_init(datafile, full = 1)))
-ann_arch = [4,6,6,6,1]
+ann_arch = [5,6,6,6,1]
 minibatchsize = 10
 layers = layers_init(ann_arch, minibatchsize)
 weights = weights_init(ann_arch)
-act_func = activations(ann_arch)
 np.savetxt('normal__.txt',np.transpose(fulldata[:minibatchsize,:]))
-forwardpass(fulldata[:minibatchsize,:], layers, weights, act_func, minibatchsize)
+forwardpass(fulldata[:minibatchsize,:], layers, weights, act, minibatchsize)
 
 # layersizelist = [4,8,4,1]
 # weights = weights_init(layersizelist)
