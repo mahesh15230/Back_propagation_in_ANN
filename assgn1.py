@@ -80,9 +80,17 @@ def forwardpass(normal_minibatch, no_act_layers, layers, weights, actfunc, minib
 def backprop(batch_avg_error, no_act_layers, actfunc, weights, layers, learning_param, minibatchsize):
 	print('dim layer[-1]', np.shape(actfunc[-1](no_act_layers[-1], True)))
 	local_grad = batch_avg_error * sum(actfunc[-1](no_act_layers[-1], True)) / minibatchsize
+	print('dim loc grad', sum(actfunc[-1](no_act_layers[-1], True)))
 	for i in range(len(layers) - 2, 0, -1):
-		weights[i] += learning_param * local_grad * layers[i].sum(axis = 1).reshape(1,3) / np.shape(layers[i])[1]
-		local_grad = sum(local_grad@weights[i]) * layers[i-1].sum(axis = 1).reshape(1,3) / np.shape(layers[i-1])[1]
+		print('layer', layers[i])
+		print('dim layer', np.shape(layers[i]))
+		print('layer bav', np.shape(layers[i].sum(axis = 1)))
+		print('type weights', [type(weights[i]),np.shape(weights[i])])
+		print('type learn_param', type(learning_param))
+		print('type local grad', [type(local_grad), np.shape(local_grad)])
+		print('type layers bav', layers[i].sum(axis = 1).reshape(1, np.shape(layers[i][0])))
+		weights[i] += learning_param * local_grad * layers[i].sum(axis = 1).reshape(1, np.shape(layers[i][0])) / np.shape(layers[i])[1]
+		local_grad = sum(local_grad * weights[i]) * layers[i-1].sum(axis = 1).reshape(1, np.shape(layers[i-1][0])) / np.shape(layers[i-1])[1]
 
 
 
