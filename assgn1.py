@@ -2,8 +2,6 @@ import numpy as np
 import math
 import copy as cp
 
-# Output layer has only ones. Why?
-
 def data_init(datafile, test = None, train = None, valid = None, full = None):
 	data = cp.deepcopy(normalization(np.loadtxt(datafile)))
 	if full != None:
@@ -71,28 +69,31 @@ def forwardpass(normal_minibatch, no_act_layers, layers, weights, actfunc, minib
 	layers[0][1:,:] = normal_minibatch[:,:minibatchsize]
 	no_act_layers = cp.deepcopy(layers)
 	for i in range(len(layers) - 1):
-		no_act_layers[i+1][1:,:] = weights[i]@layers[i]
-		layers[i+1][1:,:] = actfunc[i](weights[i]@layers[i],False)
+		if i<len(layers)-2:
+			no_act_layers[i+1][1:,:] = weights[i]@layers[i]
+			layers[i+1][1:,:] = actfunc[i](weights[i]@layers[i],False)
+		else:
+			no_act_layers[i+1][:,:] = weights[i]@layers[i]
+			layers[i+1][:,:] = actfunc[i](weights[i]@layers[i],False)
 	error = dkn - actfunc[i+1](layers[-1], False)
 	error_energy = error**2
 	return sum(error_energy) / minibatchsize
 
 def backprop(batch_avg_error, no_act_layers, actfunc, weights, layers, learning_param, minibatchsize):
-	print('dim layer[-1]', np.shape(actfunc[-1](no_act_layers[-1], True)))
-	local_grad = batch_avg_error * sum(actfunc[-1](no_act_layers[-1], True)) / minibatchsize
-	print('dim loc grad', sum(actfunc[-1](no_act_layers[-1], True)))
+	phi_dash_vj = actfunc[-1](no_act_layers[-1], True)
+	print('phi_dash', phi_dash_vj)
+	print('averaged phi_dash', phi_dash_vj.sum(axis=1))
+	local_grad = batch_avg_error * actfunc[-1](no_act_layers[-1], True).sum(axis = 1).reshape(1,1) / minibatchsize # Hardcoded to the assumption output layer has only one neuron
+	print('dim locgrad', np.shape(local_grad))
 	for i in range(len(layers) - 2, 0, -1):
-		print('layer', layers[i])
 		print('dim layer', np.shape(layers[i]))
 		print('layer bav', np.shape(layers[i].sum(axis = 1)))
 		print('type weights', [type(weights[i]),np.shape(weights[i])])
 		print('type learn_param', type(learning_param))
 		print('type local grad', [type(local_grad), np.shape(local_grad)])
-		print('type layers bav', layers[i].sum(axis = 1).reshape(1, np.shape(layers[i][0])))
-		weights[i] += learning_param * local_grad * layers[i].sum(axis = 1).reshape(1, np.shape(layers[i][0])) / np.shape(layers[i])[1]
-		local_grad = sum(local_grad * weights[i]) * layers[i-1].sum(axis = 1).reshape(1, np.shape(layers[i-1][0])) / np.shape(layers[i-1])[1]
-
-
+		print('dim layers bav', np.shape(layers[i].sum(axis = 1).reshape(1, np.shape(layers[i])[0])))
+		weights[i] += learning_param * local_grad @ layers[i].sum(axis = 1).reshape(1, np.shape(layers[i])[0]) / np.shape(layers[i])[1]
+		local_grad = sum(local_grad * weights[i]) * layers[i-1].sum(axis = 1).reshape(1, np.shape(layers[i-1])[0]) / np.shape(layers[i-1])[1]
 
 datafile = 'dataset_minibatch_test.txt'
 fulldata = np.transpose(np.array(data_init(datafile, full = 1)))
