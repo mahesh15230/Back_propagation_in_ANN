@@ -93,7 +93,7 @@ def backprop(batch_avg_error, no_act_layers, actfunc, weights, layers, learning_
 		print('dim num', np.shape(layers[i].sum(axis = 1).reshape(1, np.shape(layers[i])[0])))
 		print('dim denom', np.shape(reg_coeff * weights[i]))
 		print('dim layer', np.shape(layers[i].sum(axis = 1).reshape(1, np.shape(layers[i])[0]) / np.shape(layers[i])[1]))
-		weights[i] += (learning_param * local_grad @ layers[i].sum(axis = 1).reshape(1, np.shape(layers[i])[0]) / np.shape(layers[i])[1]).reshape(np.shape(weights[i])) - reg_coeff * weights[i]
+		weights[i] += (learning_param * local_grad @ layers[i].sum(axis = 1).reshape(1, np.shape(layers[i])[0]) / np.shape(layers[i])[1]).reshape(np.shape(weights[i])) - reg_coeff * abs(weights[i])
 		local_grad = sum(local_grad @ weights[i]) * layers[i-1].sum(axis = 1).reshape(1, np.shape(layers[i-1])[0]) / np.shape(layers[i-1])[1]
 
 datafile = 'dataset_minibatch_test.txt'
