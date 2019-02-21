@@ -63,46 +63,49 @@ def tanh(x, isbackward = False):
 	else:
 		return 1 - tanh(x,False)**2
 
-def forwardpass(normal_minibatch, no_act_layers, layers, weights, actfunc, minibatchsize):
+def forwardpass(normal_minibatch, no_act_layers, layers, weights, actfunc, minibatchsize, reg_coeff):
 	dkn = normal_minibatch[-1]
 	normal_minibatch = np.delete(normal_minibatch,np.shape(normal_minibatch)[0]-1,0)
 	layers[0][1:,:] = normal_minibatch[:,:minibatchsize]
 	no_act_layers = cp.deepcopy(layers)
 	for i in range(len(layers) - 1):
-		if i<len(layers)-2:
+		if i<=len(layers)-2:
 			no_act_layers[i+1][1:,:] = weights[i]@layers[i]
 			layers[i+1][1:,:] = actfunc[i](weights[i]@layers[i],False)
 		else:
 			no_act_layers[i+1][:,:] = weights[i]@layers[i]
 			layers[i+1][:,:] = actfunc[i](weights[i]@layers[i],False)
-	error = dkn - actfunc[i+1](layers[-1], False)
-	error_energy = error**2
-	return sum(error_energy) / minibatchsize
+	error = np.subtract(dkn, actfunc[i+1](layers[-1], False))
+	m = 0
+	for i in range(len(weights)):
+		m += sum(np.shape(weights[i]))
+	weight_reg = (reg_coeff / m) * sum([np.sum((weights[i]**2).reshape(np.shape(weights[i]))) for i in range(len(weights))])
+	error_energy = error**2 + weight_reg
+	return np.sum(error_energy) / (minibatchsize * 2)
 
-def backprop(batch_avg_error, no_act_layers, actfunc, weights, layers, learning_param, minibatchsize):
+def backprop(batch_avg_error, no_act_layers, actfunc, weights, layers, learning_param, minibatchsize, reg_coeff):
 	phi_dash_vj = actfunc[-1](no_act_layers[-1], True)
-	print('phi_dash', phi_dash_vj)
-	print('averaged phi_dash', phi_dash_vj.sum(axis=1))
-	local_grad = batch_avg_error * actfunc[-1](no_act_layers[-1], True).sum(axis = 1).reshape(1,1) / minibatchsize # Hardcoded to the assumption output layer has only one neuron
-	print('dim locgrad', np.shape(local_grad))
+	avg_phi_dash = phi_dash_vj.sum(axis=1) / minibatchsize
+	local_grad = np.array((batch_avg_error * avg_phi_dash))  # Hardcoded to the assumption output layer has only one neuron
 	for i in range(len(layers) - 2, 0, -1):
-		print('dim layer', np.shape(layers[i]))
-		print('layer bav', np.shape(layers[i].sum(axis = 1)))
-		print('type weights', [type(weights[i]),np.shape(weights[i])])
-		print('type learn_param', type(learning_param))
-		print('type local grad', [type(local_grad), np.shape(local_grad)])
-		print('dim layers bav', np.shape(layers[i].sum(axis = 1).reshape(1, np.shape(layers[i])[0])))
-		weights[i] += learning_param * local_grad @ layers[i].sum(axis = 1).reshape(1, np.shape(layers[i])[0]) / np.shape(layers[i])[1]
-		local_grad = sum(local_grad * weights[i]) * layers[i-1].sum(axis = 1).reshape(1, np.shape(layers[i-1])[0]) / np.shape(layers[i-1])[1]
+		print('dimsum', np.shape(weights[i]))
+		print('dim localgrad', local_grad)
+		print('dim num', np.shape(layers[i].sum(axis = 1).reshape(1, np.shape(layers[i])[0])))
+		print('dim denom', np.shape(reg_coeff * weights[i]))
+		print('dim layer', np.shape(layers[i].sum(axis = 1).reshape(1, np.shape(layers[i])[0]) / np.shape(layers[i])[1]))
+		weights[i] += (learning_param * local_grad @ layers[i].sum(axis = 1).reshape(1, np.shape(layers[i])[0]) / np.shape(layers[i])[1]).reshape(np.shape(weights[i])) - reg_coeff * weights[i]
+		local_grad = sum(local_grad @ weights[i]) * layers[i-1].sum(axis = 1).reshape(1, np.shape(layers[i-1])[0]) / np.shape(layers[i-1])[1]
 
 datafile = 'dataset_minibatch_test.txt'
 fulldata = np.transpose(np.array(data_init(datafile, full = 1)))
-ann_arch = [5,6,1]
-act = [tanh,relu,logistic]
+ann_arch = [5,5,6,6,7,1]
+act = [tanh,relu,tanh,relu,tanh,logistic]
 minibatchsize = 10
 learning_param = .001
+reg_coeff = .0001
 layers = layers_init(ann_arch, minibatchsize)
 no_act_layers = layers_init(ann_arch, minibatchsize)
 weights = weights_init(ann_arch)
-error = forwardpass(fulldata[:minibatchsize,:], no_act_layers, layers, weights, act, minibatchsize)
-print('back prop test', backprop(error, no_act_layers, act, weights, layers, learning_param, minibatchsize))
+error = forwardpass(fulldata[:minibatchsize,:], no_act_layers, layers, weights, act, minibatchsize, reg_coeff)
+print('error',error)
+print('back prop test', backprop(error, no_act_layers, act, weights, layers, learning_param, minibatchsize, reg_coeff))
