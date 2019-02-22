@@ -114,7 +114,7 @@ def backprop(batch_avg_error, no_act_layers, actfunc, weights, layers, learning_
 	for i in range(len(layers) - 2, 0, -1):
 		print('!!!___i___!!!',i)
 		print('dimsum', np.shape(weights[i]))
-		print('dim localgrad', local_grad)
+		print('dim localgrad', np.shape(local_grad))
 		#print('dim num', np.shape(layers[i].sum(axis = 1).reshape(1, np.shape(layers[i])[1])))
 		print('dim denom', np.shape(reg_coeff * weights[i]))
 		print('dim phidash', np.shape(np.array([layers[i].sum(axis = 1) / np.shape(layers[i])[1]])))
