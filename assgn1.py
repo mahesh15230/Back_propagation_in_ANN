@@ -83,16 +83,12 @@ def forwardpass(normal_minibatch, no_act_layers, layers, weights, actfunc, minib
 	error_energy = error**2 + weight_reg
 	return np.sum(error_energy) / (minibatchsize * 2)
 
-def phidashv(layer): # Returns a column matrix
-	phidash = np.array([layer.sum(axis=1)]) / np.shape(layer)[1]
-	return np.transpose(phidash)
-
+def phidashv(layer): # Returns a row matrix
+	return np.array([layer.sum(axis=1)]) / np.shape(layer)[1]
+	
 def localgrad(localgradprev,weight,phidash): #localgradprev is row matrix, so is phidash
 	if np.shape(localgradprev)[1] == np.shape(weight)[0]:
 		if np.shape(weight)[1] == np.shape(phidash)[1]:
-			print('dim localgradprev',np.shape(localgradprev))
-			print('dim weight', np.shape(weight))
-			print('dim phidash', np.shape(phidash))
 			return phidash * (localgradprev @ weight)
 		else:
 			print('dim weight and phidash incompatible')
@@ -110,21 +106,27 @@ def localgrad(localgradprev,weight,phidash): #localgradprev is row matrix, so is
 def backprop(batch_avg_error, no_act_layers, actfunc, weights, layers, learning_param, minibatchsize, reg_coeff):
 	phi_dash_vj = actfunc[-1](no_act_layers[-1], True)
 	avg_phi_dash = phi_dash_vj.sum(axis=1) / minibatchsize
-	local_grad = np.array((batch_avg_error * avg_phi_dash))  # Hardcoded to the assumption output layer has only one neuron
+	local_grad = np.array([batch_avg_error * avg_phi_dash])  # Hardcoded to the assumption output layer has only one neuron
+	delta_weights = []
 	for i in range(len(layers) - 2, 0, -1):
 		print('!!!___i___!!!',i)
-		print('dimsum', np.shape(weights[i]))
-		print('dim localgrad', np.shape(local_grad))
-		#print('dim num', np.shape(layers[i].sum(axis = 1).reshape(1, np.shape(layers[i])[1])))
-		print('dim denom', np.shape(reg_coeff * weights[i]))
-		print('dim phidash', np.shape(np.array([layers[i].sum(axis = 1) / np.shape(layers[i])[1]])))
-		weights[i] += (learning_param * (np.transpose(local_grad) @ layers[i].sum(axis = 1).reshape(1,np.shape(layers[i])[0])) / np.shape(layers[i])[1]) - reg_coeff * abs(weights[i])
-		local_grad = sum(local_grad @ weights[i]) * layers[i-1].sum(axis = 1).reshape(1, np.shape(layers[i-1])[0]) / np.shape(layers[i-1])[1]
+		print('dim weight', np.shape(weights[i]))
+		print('dim localgrad', np.shape(np.transpose(local_grad)))
+		print('dim layer', np.shape(layers[i]))
+		print('dim phidashavg', np.shape(phidashv(layers[i])))
+		print('type weight update eq',np.shape(np.transpose(local_grad) @ phidashv(layers[i])))
+		delta_weights.append(learning_param * (np.transpose(local_grad) @ phidashv(layers[i])) - reg_coeff * abs(weights[i]))
+		#local_grad = sum(local_grad @ weights[i]) * layers[i-1].sum(axis = 1).reshape(1, np.shape(layers[i-1])[0]) / np.shape(layers[i-1])[1]
+		local_grad = localgrad(local_grad,weights[i],phidashv(layers[i]))
+
+
+
+
 
 datafile = 'dataset_minibatch_test.txt'
 fulldata = np.transpose(np.array(data_init(datafile, full = 1)))
-ann_arch = [5,5,6,6,7,1]
-act = [tanh,relu,tanh,relu,tanh,logistic]
+ann_arch = [5,4,3,2,1]
+act = [tanh,relu,tanh,relu,logistic]
 minibatchsize = 10
 learning_param = .001
 reg_coeff = .0001
