@@ -60,10 +60,15 @@ def tanh(x, isbackward = False):
 		return 1 - tanh(x,False)**2
 
 def forwardpass(normal_minibatch, no_act_layers, layers, weights, actfunc, minibatchsize, reg_coeff, plot = False):
-	dkn = normal_minibatch[-1]
-	normal_minibatch = np.delete(normal_minibatch,np.shape(normal_minibatch)[0]-1,0)
-	print('dim layer', np.shape(layers[0][1:,:]))
-	print('dim minibatch', np.shape(normal_minibatch[:,:minibatchsize]))
+	dkn = normal_minibatch[-1:,:]
+	#print('dim dkn', dkn.shape)
+	normal_minibatch = normal_minibatch[:-1,:]
+	# print('dim layer', np.shape(layers[0][1:,:]))
+	# print('dim minibatch', np.shape(normal_minibatch[:,:minibatchsize]))
+	print('dim layer[0]', layers[0].shape)
+	print('dim layer[1]', layers[1].shape)
+	print('dim layer[2]', layers[2].shape)
+	print('dim layer[3]', layers[3].shape)
 	layers[0][1:,:] = normal_minibatch[:,:minibatchsize]
 	no_act_layers = cp.deepcopy(layers)
 	for i in range(len(layers) - 1):
@@ -73,8 +78,7 @@ def forwardpass(normal_minibatch, no_act_layers, layers, weights, actfunc, minib
 		else:
 			no_act_layers[i+1][:,:] = weights[i]@layers[i]
 			layers[i+1][:,:] = actfunc[i](weights[i]@layers[i],False)
-	
-	
+	print('dim layer last', layers[-1].shape)
 	error = np.subtract(dkn, actfunc[i+1](layers[-1], False))
 	m = 0
 	for i in range(len(weights)):
@@ -126,6 +130,7 @@ def backprop(batch_avg_error, beta, no_act_layers, actfunc, weights, layers, lea
 
 # datafile = 'dataset_minibatch_test.txt'
 # fulldata = np.transpose(np.array(data_init(datafile, full = 1)))
+# print(fulldata)
 # ann_arch = [5,4,3,2,1]
 # act = [tanh,relu,tanh,relu,logistic]
 # minibatchsize = 10
@@ -135,9 +140,12 @@ def backprop(batch_avg_error, beta, no_act_layers, actfunc, weights, layers, lea
 # no_act_layers = layers_init(ann_arch, minibatchsize)
 # weights = weights_init(ann_arch)
 # error = forwardpass(fulldata[:minibatchsize,:], no_act_layers, layers, weights, act, minibatchsize, reg_coeff, plot = False)
+# avg_error = forwardpass(fulldata[:minibatchsize,:], no_act_layers, layers, weights, act, minibatchsize, reg_coeff, plot = True)
+# print('ERROR', error)
+# print('AVG_ERROR', avg_error)
 # print('back prop test', backprop(error, .9, no_act_layers, act, weights, layers, learning_param, minibatchsize, reg_coeff))
 
-def trainingANN(data, epochs, minibatchsize, beta, learning_param, reg_coeff, ann_arch, no_act_layers, layers, actfunc, weights, train = None, valid = None):
+def trainingANN(data, epochs, minibatchsize, beta, learning_param, reg_coeff, ann_arch, no_act_layers, layers, actfunc, weights):
 	train_error_epoch = []
 	valid_error_epoch = []
 	for j in range(epochs):
@@ -151,13 +159,10 @@ def trainingANN(data, epochs, minibatchsize, beta, learning_param, reg_coeff, an
 			backprop(error, beta, no_act_layers, actfunc, weights, layers, learning_param, minibatchsize, reg_coeff)
 		training_error /= (len(traindata) / minibatchsize)
 		train_error_epoch.append(training_error)
-		valid_error += forwardpass(validdata, no_act_layers, layers, weights, actfunc, len(validdata), reg_coeff, plot = True)
+		valid_error += forwardpass(validdata, layers_init(ann_arch, np.shape(validdata)[1]), layers_init(ann_arch, np.shape(validdata)[1]), weights, actfunc, len(validdata), reg_coeff, plot = True)
 		valid_error /= len(validdata)
 		valid_error_epoch.append(valid_error)
-	if train == True:
-		return train_error_epoch
-	if valid == True:
-		return valid_error_epoch
+	return train_error_epoch, valid_error_epoch
 
 data = 'dataset_full.txt'
 epochs = 3000
@@ -170,5 +175,4 @@ no_act_layers = layers_init(ann_arch, minibatchsize)
 layers = layers_init(ann_arch, minibatchsize)
 actfunc = [tanh,relu,tanh,logistic]
 weights = weights_init(ann_arch)
-__training__ = trainingANN(data, epochs, minibatchsize, beta, learning_param, reg_coeff, ann_arch, no_act_layers, layers, actfunc, weights, train = True, valid = None)
-__validation__ = trainingANN(data, epochs, minibatchsize, beta, learning_param, reg_coeff, ann_arch, no_act_layers, layers, actfunc, weights, train = None, valid = True)
+__training__, __valid__ = trainingANN(data, epochs, minibatchsize, beta, learning_param, reg_coeff, ann_arch, no_act_layers, layers, actfunc, weights)
